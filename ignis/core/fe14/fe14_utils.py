@@ -85,22 +85,22 @@ def apply_randomized_class_set(
     characters,
     classes,
     aid,
-    rid,
-    ranks_source,
+    destination_rid,
+    source_rid,
     rand,
     gender=None,
     class_level=None,
     staff_only_ban=False,
 ):
-    original_primary_class = gd.rid(ranks_source, "class_1")
+    original_primary_class = gd.rid(source_rid, "class_1")
 
     c1, c2, r1, r2 = characters.get_character_class_set(
         aid, gender, class_level, staff_only_ban
     )
-    gd.set_rid(rid, "class_1", c1)
-    gd.set_rid(rid, "class_2", c2)
-    gd.set_rid(rid, "reclass_1", r1)
-    gd.set_rid(rid, "reclass_2", r2)
+    gd.set_rid(destination_rid, "class_1", c1)
+    gd.set_rid(destination_rid, "class_2", c2)
+    gd.set_rid(destination_rid, "reclass_1", r1)
+    gd.set_rid(destination_rid, "reclass_2", r2)
 
     # Edge case: Increase the character's level by 20 if going from
     # regular promoted class to one that's capped at 40.
@@ -108,11 +108,11 @@ def apply_randomized_class_set(
         original_primary_class
     ) and not classes.is_capped_at_40_class(original_primary_class):
         if classes.is_capped_at_40_class(c1):
-            gd.set_int(rid, "level", gd.int(rid, "level") + 20)
+            gd.set_int(destination_rid, "level", gd.int(destination_rid, "level") + 20)
 
     # Reconcile character and primary class weapon ranks
     class_weapon_ranks = list(enumerate(WeaponRank.ranks_from_fates_job(gd, c1)))
-    character_weapon_exp = WeaponExp.from_fates_character(gd, ranks_source)
+    character_weapon_exp = WeaponExp.from_fates_character(gd, source_rid)
 
     # Sort highest rank/exp to lowest
     sorted_class_ranks = sorted(
@@ -131,13 +131,13 @@ def apply_randomized_class_set(
     for i in range(0, len(sorted_character_exp)):
         index, _ = sorted_class_ranks[i]
         new_exp[index] = sorted_character_exp[i].exp
-    WeaponExp.save_fates_weapon_exp(gd, rid, new_exp)
+    WeaponExp.save_fates_weapon_exp(gd, destination_rid, new_exp)
 
 
-def apply_randomized_bitflags(gd, characters, aid, rid1, rid2):
-    bitflags = characters.get_character_bitflags(aid, rid1, rid2)
+def apply_randomized_bitflags(gd, characters, aid, destination_rid, source_rid):
+    bitflags = characters.get_character_bitflags(aid, destination_rid, source_rid)
     for field, value in bitflags.items():
-        gd.set_int(rid1, field, value)
+        gd.set_int(destination_rid, field, value)
 
 
 def apply_randomized_stats(

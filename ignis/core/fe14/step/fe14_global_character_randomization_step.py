@@ -22,44 +22,46 @@ class FE14GlobalCharacterRandomizationStep(RandomizationStep):
         stat_strategy = stat_randomization_strategy.from_algorithm(
             user_config.stat_randomization_algorithm
         )
-        for char, replacing in characters.swaps:
-            rid = characters.to_rid(char.pid)
-            replacing_rid = characters.get_original(replacing.pid)
-            aid = gd.string(rid, "aid")
+        for original, replacement in characters.swaps:
+            # Read cached data from the original character in each slot
+            #  and write it to the new character's address
+            original_rid = characters.get_original(original.pid)
+            replacement_rid = characters.to_rid(replacement.pid)
+            replacement_aid = gd.string(original_rid, "aid")
             if user_config.randomize_personal_skills:
                 fe14_utils.apply_randomized_skills(
-                    gd, characters, user_config, skills, aid, rid
+                    gd, characters, user_config, skills, replacement_aid, replacement_rid
                 )
             if user_config.randomize_join_order:
                 fe14_utils.apply_randomized_bitflags(
-                    gd, characters, aid, rid, replacing_rid
+                    gd, characters, replacement_aid, replacement_rid, original_rid
                 )
-                gd.set_int(rid, "level", gd.int(replacing_rid, "level"))
+                gd.set_int(replacement_rid, "level", gd.int(original_rid, "level"))
                 gd.set_int(
-                    rid, "internal_level", gd.int(replacing_rid, "internal_level")
+                    replacement_rid, "internal_level", gd.int(original_rid, "internal_level")
                 )
-                gd.set_int(rid, "support_route", _ALL_SUPPORT_ROUTES)
-                gd.set_rid(rid, "parent", characters.get_parent(replacing_rid))
+                gd.set_int(replacement_rid, "support_route", _ALL_SUPPORT_ROUTES)
+                gd.set_rid(replacement_rid, "parent", characters.get_parent(original_rid))
             if user_config.randomize_classes:
                 fe14_utils.apply_randomized_class_set(
                     gd,
                     characters,
                     classes,
-                    aid,
-                    rid,
-                    replacing_rid,
+                    replacement_aid,
+                    replacement_rid,
+                    original_rid,
                     rand,
-                    char.gender,
-                    replacing.class_level,
+                    replacement.gender,
+                    original.class_level,
                 )
 
             if user_config.characters_keep_their_own_stats:
-                cached_rid = characters.get_original(char.pid)
+                # In this case, use the new character's own stats and read/write in place
                 fe14_utils.apply_randomized_stats(
-                    gd, rand, cached_rid, rid, stat_strategy, user_config.passes
+                    gd, rand, replacement_rid, replacement_rid, stat_strategy, user_config.passes
                 )
             else:
                 fe14_utils.apply_randomized_stats(
-                    gd, rand, replacing_rid, rid, stat_strategy, user_config.passes
+                    gd, rand, original_rid, replacement_rid, stat_strategy, user_config.passes
                 )
         gd.set_store_dirty("gamedata", True)

@@ -67,7 +67,7 @@ class FE14DisposRandomizationStep(RandomizationStep):
         if pid in _BANNED_PIDS:
             return dirty
 
-        if replacement_pid := characters.get_replacement(pid):
+        if replacement_pid := characters.get_replacement_pid(pid):
             gd.set_string(spawn, "pid", replacement_pid)
             pid = replacement_pid
 

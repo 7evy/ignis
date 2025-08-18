@@ -18,7 +18,7 @@ class FE14UpdateParalogueUnlocksStep(RandomizationStep):
         for _, cid in chapters.enabled_chapters():
             rid = chapters.to_rid(cid)
             if character_rid := gd.rid(rid, "married_character"):
-                if replacement := characters.get_replacement(gd.key(character_rid)):
+                if replacement := characters.get_replacement_pid(gd.key(character_rid)):
                     replacement_rid = characters.to_rid(replacement)
                     gd.set_rid(rid, "married_character", replacement_rid)
                     gd.set_int(rid, "route", _ALL_ROUTES)

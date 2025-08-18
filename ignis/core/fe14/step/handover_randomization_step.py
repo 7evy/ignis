@@ -40,7 +40,7 @@ class HandoverRandomizationStep(RandomizationStep):
         dirty = False
         for rid in people:
             if orig := gd.rid(rid, "replacing"):
-                if replacement := characters.get_replacement(gd.key(orig)):
+                if replacement := characters.get_replacement_pid(gd.key(orig)):
                     HandoverRandomizationStep.randomize_person(
                         gd,
                         user_config,

@@ -13,7 +13,7 @@ class LeoA001ModelReplacementStep(RandomizationStep):
         rom2 = gd.node("rom2").rid
         rom3 = gd.node("rom3").rid
         rom4 = gd.node("rom4").rid
-        if replacement_pid := characters.get_replacement("PID_レオン"):
+        if replacement_pid := characters.get_replacement_pid("PID_レオン"):
             replacement = characters.to_rid(replacement_pid)
             replacement_primary_class = gd.rid(replacement, "class_1")
             replacement_jid = gd.key(replacement_primary_class)

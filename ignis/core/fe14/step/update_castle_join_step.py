@@ -49,7 +49,7 @@ class UpdateCastleJoinStep(RandomizationStep):
         # Apply swaps
         for rid in gd.items(table_rid, table_field_id):
             pid = gd.key(gd.rid(rid, "character"))
-            if replacement_pid := characters.get_replacement(pid):
+            if replacement_pid := characters.get_replacement_pid(pid):
                 character_rid = characters.to_rid(replacement_pid)
                 gd.set_rid(rid, "character", character_rid)
 

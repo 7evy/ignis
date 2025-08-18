@@ -83,7 +83,7 @@ class FE14CharactersVendor:
             self.swaps = shuffler.shuffle(characters)
         else:
             self.swaps = list(zip(characters, characters))
-        self.pid_to_replacement = {r.pid: c.pid for c, r in self.swaps}
+        self.original_pid_to_replacement_pid = {c.pid: r.pid for c, r in self.swaps}
 
         # Cache originals.
         for character in characters:
@@ -102,7 +102,7 @@ class FE14CharactersVendor:
     def get_parent(self, rid):
         parent = self.gd.rid(rid, "parent")
         if parent:
-            replacement = self.get_replacement(self.gd.key(parent))
+            replacement = self.get_replacement_pid(self.gd.key(parent))
             if replacement:
                 return self.to_rid(replacement)
         return None
@@ -113,7 +113,7 @@ class FE14CharactersVendor:
 
     def get_global_character(self, pid, aid=None):
         if aid and aid in self.aid_to_rid:
-            replacement = self.get_replacement(self.gd.key(self.aid_to_rid[aid]))
+            replacement = self.get_replacement_pid(self.gd.key(self.aid_to_rid[aid]))
             self.character_aliases[pid] = replacement
             return self.aid_to_rid[aid]
         if pid in self.enabled_pids:
@@ -137,8 +137,8 @@ class FE14CharactersVendor:
     def to_rid(self, pid):
         return self.pid_to_rid[pid]
 
-    def get_replacement(self, pid):
-        return self.pid_to_replacement.get(pid)
+    def get_replacement_pid(self, pid):
+        return self.original_pid_to_replacement_pid.get(pid)
 
     def get_original(self, pid):
         return self.originals[pid]
@@ -163,46 +163,46 @@ class FE14CharactersVendor:
             self.character_classes[aid] = class_set
             return class_set
 
-    def get_character_bitflags(self, aid, char=None, replacing=None):
+    def get_character_bitflags(self, aid, replacement=None, original=None):
         if aid in self.character_bitflags:
             return self.character_bitflags[aid]
-        elif not char or not replacing:
+        elif not original or not replacement:
             raise ValueError("Need character info to generate bitflags.")
         else:
             bitflags = {}
             for f, m in _BITFLAG_SWAPS:
-                new_bits = self.gd.int(replacing, f) & m
-                char_bits = self.gd.int(char, f) & (~m)
+                new_bits = self.gd.int(original, f) & m
+                char_bits = self.gd.int(replacement, f) & (~m)
                 bitflags[f] = char_bits | new_bits
             self.character_bitflags[aid] = bitflags
             return bitflags
 
     def get_dialogue_replacements(self):
         replacements = {}
-        for character, replacing in self.swaps:
-            char_rid = self.pid_to_rid[character.pid]
-            replacing_rid = self.pid_to_rid[replacing.pid]
-            char_fid = self.gd.string(char_rid, "fid")
-            replacing_fid = self.gd.string(replacing_rid, "fid")
-            char_name = self.gd.display(char_rid)
-            replacing_name = self.gd.display(replacing_rid)
-            if char_fid and replacing_fid:
-                replacements[replacing_fid[4:]] = char_fid[4:]
-            replacements[replacing_name] = char_name
-            replacements[replacing_name.upper()] = char_name.upper()
-            replacements[replacing.voice_set] = character.voice_set
+        for original, replacement in self.swaps:
+            original_rid = self.pid_to_rid[original.pid]
+            replacement_rid = self.pid_to_rid[replacement.pid]
+            original_fid = self.gd.string(original_rid, "fid")
+            replacement_fid = self.gd.string(replacement_rid, "fid")
+            old_name = self.gd.display(original_rid)
+            new_name = self.gd.display(replacement_rid)
+            if original_fid and replacement_fid:
+                replacements[original_fid[4:]] = replacement_fid[4:]
+            replacements[old_name] = new_name
+            replacements[old_name.upper()] = new_name.upper()
+            replacements[original.voice_set] = replacement.voice_set
         return replacements
 
     def get_script_replacements(self):
         replacements = {}
-        for character, replacing in self.swaps:
-            char_rid = self.pid_to_rid[character.pid]
-            replacing_rid = self.pid_to_rid[replacing.pid]
-            char_aid = self.gd.string(char_rid, "aid")
-            replacing_aid = self.gd.string(replacing_rid, "aid")
-            if char_aid and replacing_aid:
-                replacements[replacing_aid[4:]] = char_aid[4:]
-            replacements[replacing.pid] = character.pid
+        for original, replacement in self.swaps:
+            original_rid = self.pid_to_rid[replacement.pid]
+            replacement_rid = self.pid_to_rid[replacement.pid]
+            original_aid = self.gd.string(original_rid, "aid")
+            replacement_aid = self.gd.string(replacement_rid, "aid")
+            if original_aid and replacement_aid:
+                replacements[original_aid[4:]] = replacement_aid[4:]
+            replacements[original.pid] = replacement.pid
         return replacements
 
     def generate_character_reports(self):
@@ -216,22 +216,22 @@ class FE14CharactersVendor:
         ]
 
     def _generate_report_for_mu(self, pid, name):
-        char_rid = self.to_rid(pid)
-        primary_class_name = self.gd.display(self.gd.rid(char_rid, "class_1"))
-        secondary_class_name = self.gd.display(self.gd.rid(char_rid, "class_2"))
-        reclass_1_name = self.gd.display(self.gd.rid(char_rid, "reclass_1"))
-        reclass_2_name = self.gd.display(self.gd.rid(char_rid, "reclass_2"))
+        mu_rid = self.to_rid(pid)
+        primary_class_name = self.gd.display(self.gd.rid(mu_rid, "class_1"))
+        secondary_class_name = self.gd.display(self.gd.rid(mu_rid, "class_2"))
+        reclass_1_name = self.gd.display(self.gd.rid(mu_rid, "reclass_1"))
+        reclass_2_name = self.gd.display(self.gd.rid(mu_rid, "reclass_2"))
         personal_skill_name = self.gd.display(
-            self.gd.rid(char_rid, "personal_skill_normal")
+            self.gd.rid(mu_rid, "personal_skill_normal")
         )
         equipped_skills = fe14_utils.get_equipped_skill_names(
-            self.gd, self.skills, char_rid
+            self.gd, self.skills, mu_rid
         )
-        bases = self.bytes_to_signed_int_list(self.gd.bytes(char_rid, "bases"))
-        growths = self.bytes_to_signed_int_list(self.gd.bytes(char_rid, "growths"))
-        modifiers = self.bytes_to_signed_int_list(self.gd.bytes(char_rid, "modifiers"))
-        level = self.gd.int(char_rid, "level")
-        internal_level = self.gd.int(char_rid, "internal_level")
+        bases = self.bytes_to_signed_int_list(self.gd.bytes(mu_rid, "bases"))
+        growths = self.bytes_to_signed_int_list(self.gd.bytes(mu_rid, "growths"))
+        modifiers = self.bytes_to_signed_int_list(self.gd.bytes(mu_rid, "modifiers"))
+        level = self.gd.int(mu_rid, "level")
+        internal_level = self.gd.int(mu_rid, "internal_level")
         return FE14CharacterReport(
             name,
             None,
@@ -247,35 +247,35 @@ class FE14CharactersVendor:
             internal_level,
         )
 
-    def _generate_report_for_character(self, character, replacing):
-        char_rid = self.to_rid(character.pid)
-        replacing_rid = self.to_rid(replacing.pid)
-        name = self.gd.display(char_rid)
-        replacing_name = self.gd.display(replacing_rid)
-        primary_class_name = self.gd.display(self.gd.rid(char_rid, "class_1"))
-        secondary_class_name = self.gd.display(self.gd.rid(char_rid, "class_2"))
-        reclass_1_name = self.gd.display(self.gd.rid(char_rid, "reclass_1"))
-        reclass_2_name = self.gd.display(self.gd.rid(char_rid, "reclass_2"))
+    def _generate_report_for_character(self, original, replacement):
+        original_rid = self.to_rid(original.pid)
+        replacement_rid = self.to_rid(replacement.pid)
+        name = self.gd.display(original_rid)
+        new_name = self.gd.display(replacement_rid)
+        primary_class_name = self.gd.display(self.gd.rid(replacement_rid, "class_1"))
+        secondary_class_name = self.gd.display(self.gd.rid(replacement_rid, "class_2"))
+        reclass_1_name = self.gd.display(self.gd.rid(replacement_rid, "reclass_1"))
+        reclass_2_name = self.gd.display(self.gd.rid(replacement_rid, "reclass_2"))
         personal_skill_name = self.gd.display(
-            self.gd.rid(char_rid, "personal_skill_normal")
+            self.gd.rid(replacement_rid, "personal_skill_normal")
         )
         equipped_skills = fe14_utils.get_equipped_skill_names(
-            self.gd, self.skills, char_rid
+            self.gd, self.skills, replacement_rid
         )
-        bases = self.bytes_to_signed_int_list(self.gd.bytes(char_rid, "bases"))
-        growths = self.bytes_to_signed_int_list(self.gd.bytes(char_rid, "growths"))
-        modifiers = self.bytes_to_signed_int_list(self.gd.bytes(char_rid, "modifiers"))
-        level = self.gd.int(char_rid, "level")
-        internal_level = self.gd.int(char_rid, "internal_level")
+        bases = self.bytes_to_signed_int_list(self.gd.bytes(replacement_rid, "bases"))
+        growths = self.bytes_to_signed_int_list(self.gd.bytes(replacement_rid, "growths"))
+        modifiers = self.bytes_to_signed_int_list(self.gd.bytes(replacement_rid, "modifiers"))
+        level = self.gd.int(replacement_rid, "level")
+        internal_level = self.gd.int(replacement_rid, "internal_level")
         # add markers in the report to distinguish between male and female kana
         for (kana_pid, suffix) in [(_MALE_KANA, " (M)"), (_FEMALE_KANA, " (F)")]:
-            if char_rid == self.to_rid(kana_pid):
+            if original_rid == self.to_rid(kana_pid):
                 name += suffix
-            if replacing_rid == self.to_rid(kana_pid):
-                replacing_name += suffix
+            if replacement_rid == self.to_rid(kana_pid):
+                new_name += suffix
         return FE14CharacterReport(
             name,
-            replacing_name,
+            new_name,
             primary_class_name,
             secondary_class_name,
             [reclass_1_name, reclass_2_name],

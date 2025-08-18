@@ -23,7 +23,7 @@ class ApplyB016ShuraFixStep(RandomizationStep):
         items = dependencies.items
 
         # Get new weapons for Shura/Shura's replacement
-        replacement = characters.get_replacement("PID_アシュラ")
+        replacement = characters.get_replacement_pid("PID_アシュラ")
         if not replacement:
             return
         rid = characters.to_rid(replacement)

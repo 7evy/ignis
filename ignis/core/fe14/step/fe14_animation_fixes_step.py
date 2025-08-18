@@ -52,7 +52,7 @@ class FE14AnimationFixesStep(RandomizationStep):
 
     @staticmethod
     def _get_replacement_aid(gd, characters, pid):
-        replacement_pid = characters.get_replacement(pid)
+        replacement_pid = characters.get_replacement_pid(pid)
         replacement_rid = (
             characters.to_rid(replacement_pid) if replacement_pid else None
         )

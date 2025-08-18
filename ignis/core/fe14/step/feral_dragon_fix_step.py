@@ -17,8 +17,8 @@ class FeralDragonFixStep(RandomizationStep):
     def run(self, gd, user_config, dependencies):
         characters = dependencies.characters
 
-        male_kana_replacement = characters.get_replacement(_MALE_KANA)
-        female_kana_replacement = characters.get_replacement(_FEMALE_KANA)
+        male_kana_replacement = characters.get_replacement_pid(_MALE_KANA)
+        female_kana_replacement = characters.get_replacement_pid(_FEMALE_KANA)
         male_kana_replacement_rid = (
             characters.to_rid(male_kana_replacement) if male_kana_replacement else None
         )
